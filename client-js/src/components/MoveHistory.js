@@ -42,14 +42,61 @@ export class MoveHistory {
 
     build() {
         // TODO: Construir la estructura DOM según la especificación del requerimiento 1.
+        this.element = document.createElement("div");
+        this.element.className = "moves-card";
+
+        const header = document.createElement("div");
+        header.className = "player-card-header";
+        header.textContent = "Historial de Jugadas";
+
+        this.listContainer = document.createElement("div");
+        this.listContainer.id = "moves-list";
+        this.listContainer.className = "moves-list";
+
+        this.element.appendChild(header);
+        this.element.appendChild(this.listContainer);
+
+        this.renderEmpty();
     }
 
     renderEmpty() {
         // TODO: Mostrar el estado vacío según la especificación del requerimiento 2.
+        this.listContainer.innerHTML = "";
+        const emptyMessage = document.createElement("em");
+        emptyMessage.textContent = "Sin jugadas aún";
+        this.listContainer.appendChild(emptyMessage);
     }
 
     update(moves) {
         // TODO: Procesar el arreglo de jugadas según la especificación del requerimiento 3.
+        if (!moves || moves.length === 0){
+            this.renderEmpty();
+        }
+        else{
+            this.listContainer.innerHTML = "";
+            for (let i = 0; i < moves.length; i += 2){
+                const turnNumber = Math.floor(i/2) + 1;
+                const whiteMove = moves[i].moveNotation;
+                const blackMove = (i + 1 < moves.length) ? moves[i + 1].moveNotation : "";
+
+                const row = document.createElement("div");
+                const turnElement = document.createElement("strong");
+                turnElement.textContent = `${turnNumber}. `;
+                row.appendChild(turnElement);
+
+                const whiteMoveElement = document.createTextNode(whiteMove);
+                row.appendChild(whiteMoveElement);
+
+                if (blackMove) {
+                    const blackMoveElement = document.createTextNode(` ${blackMove}`);
+                    row.appendChild(blackMoveElement);
+                }
+
+                this.listContainer.appendChild(row);
+            }
+        }
+        // Auto-scroll 
+        this.listContainer.scrollTop = this.listContainer.scrollHeight;
     }
 
     getElement() {

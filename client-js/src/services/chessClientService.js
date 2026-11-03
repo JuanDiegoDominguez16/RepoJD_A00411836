@@ -136,18 +136,34 @@ export class ChessClientService {
     async makeMove(fromRow, fromCol, toRow, toCol) {
         // TODO (Paso 4.4): Instanciar dos objetos this.ChessApp.Position(row, col)
         // e invocar await this.service.makeMove(this.currentRoomCode, this.nickname, fromPos, toPos).
+
+        this.ensureConnected();
+        const fromPos = new this.ChessApp.Position(fromRow, fromCol);
+        const toPos = new this.ChessApp.Position(toRow, toCol);
+        await this.service.makeMove(this.currentRoomCode, this.nickname, fromPos, toPos);
     }
 
     async resign() {
         // TODO (Paso 4.4): Invocar await this.service.resign(this.currentRoomCode, this.nickname).
+        this.ensureConnected();
+        await this.service.resign(this.currentRoomCode, this.nickname);
     }
 
     async leaveRoom() {
         // TODO (Paso 4.4): Desuscribir this.realtimeObserver, invocar
         // await this.service.leaveRoom(this.currentRoomCode, this.nickname) y limpiar el estado de sala actual.
+        this.ensureConnected();
+        await this.realtimeObserver.unsubscribe(this.service, this.currentRoomCode, this.nickname);
+        await this.service.leaveRoom(this.currentRoomCode, this.nickname);
+        this.currentRoomCode = null;
+        this.role = null;
+        this.assignedColor = null;
     }
 
     ensureConnected() {
         // TODO: Verificar que el cliente esté conectado antes de realizar llamadas RPC.
+        if (!this.isConnected) {
+            throw new Error("Not connected to the server.");
+        }
     }
 }

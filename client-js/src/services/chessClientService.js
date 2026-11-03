@@ -12,11 +12,22 @@ export class ChessClientService {
         // TODO (Paso 4.1): Inicializar las referencias a window.Ice, window.ChessApp y el estado
         // interno del servicio (communicator, service, realtimeObserver, isConnected, nickname,
         // currentRoomCode, role, assignedColor).
+        this.communicator = null;
+        this.service = null;
+        this.realtimeObserver = null;
+        this.isConnected = false;
+        this.nickname = null;
+        this.currentRoomCode = null;
+        this.role = null;
+        this.assignedColor = null;
     }
 
     validateRuntime() {
         // TODO (Paso 4.1): Verificar que window.Ice y window.ChessApp estén disponibles;
         // en caso contrario lanzar un Error descriptivo.
+        if (!window.Ice || !window.ChessApp){
+            throw new Error("ZeroC Ice runtime or ChessApp contract is not available.");
+        }
     }
 
     async connect(host, port, nickname) {
@@ -29,11 +40,56 @@ export class ChessClientService {
         //    y obtener this.service mediante await this.ChessApp.ChessServicePrx.checkedCast(base).
         // 5. Instanciar this.realtimeObserver = new ChessRealtimeObserver(this.Ice, this.ChessApp)
         //    y marcar this.isConnected = true.
+
+        this.validateRuntime();
+
+        if (this.communicator){
+            this.communicator.destroy();    
+            this.communicator = null;
+        }
+
+        this.isConnected = false;
+
+        const initData = new window.Ice.InicializationData();
+        initData.properties = window.Ice.createProperties();
+
+        initData.properties.setProperty("Ice.MessageSizeMax", "2048");
+        initData.properties.setProperty("Ice.ACM.Client.Timeout", "0");
+        initData.properties.setProperty("Ice.ACM.Client.Heartbeat", "3");
+
+        try {
+            this.communicator = window.Ice.initialize(initData);
+
+        const targetHost = host;
+        const targetPort = port;
+
+        const proxyString = `ChessService:ws -h ${targetHost} -p ${targetPort}`;
+        const base = this.communicator.stringToProxy(proxyString);
+
+        this.service = await window.ChessApp.ChessServicePrx.checkedCast(base);
+
+        if (!this.service) {
+            throw new Error("Invalid proxy for ChessService.");
+        }
+        
+        this.realtimeObserver = new window.ChessRealtimeObserver(this.Ice, this.ChessApp);
+        this.isConnected = true;
+
+        }catch(error){
+            this.isConnected = false;
+
+            if(this.communicator){
+                this.communicator.destroy();
+                this.communicator = null;
+            }
+            throw error;
+        }
     }
 
     async getLobbyData() {
         // TODO (Paso 4.3): Consultar concurrentemente getActiveRooms() y getLeaderboard()
         // en el servidor y retornar { rooms, leaderboard }.
+        
     }
 
     async createRoom(nickname) {

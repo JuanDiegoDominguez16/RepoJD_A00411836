@@ -89,22 +89,48 @@ export class ChessClientService {
     async getLobbyData() {
         // TODO (Paso 4.3): Consultar concurrentemente getActiveRooms() y getLeaderboard()
         // en el servidor y retornar { rooms, leaderboard }.
-        
+
+        this.ensureConnected();
+        const [rooms, leaderboard] = await Promise.all([
+            this.service.getActiveRooms(),
+            this.service.getLeaderboard()
+        ]);
+
+        return { rooms, leaderboard };
     }
 
     async createRoom(nickname) {
         // TODO (Paso 4.3): Invocar remotamente createRoom(this.nickname) y retornar el código generado.
+        this.ensureConnected();
+        const roomCode = await this.service.createRoom(nickname);
+        return roomCode;
+       
     }
 
     async joinRoom(roomCode, nickname) {
         // TODO (Paso 4.3): Normalizar el código de sala en mayúsculas, invocar
         // joinRoom(normalizedCode, this.nickname), actualizar this.currentRoomCode,
         // this.role y this.assignedColor, y retornar el JoinRoomResult.
+
+        this.ensureConnected();
+        const normalizedCode = roomCode.toUpperCase();
+        const joinResult = await this.service.joinRoom(normalizedCode, nickname);
+        this.currentRoomCode = normalizedCode;
+        this.role = joinResult.role;
+        this.assignedColor = joinResult.assignedColor;
+        return joinResult;
     }
 
     async subscribeToRoom(listeners = {}) {
         // TODO (Paso 4.4): Delegar la suscripción en tiempo real a
         // await this.realtimeObserver.subscribe(this.communicator, this.service, this.currentRoomCode, this.nickname, listeners).
+        this.ensureConnected();
+        await this.realtimeObserver.subscribe(this.communicator,
+             this.service,
+              this.currentRoomCode,
+               this.nickname,
+                listeners);
+
     }
 
     async makeMove(fromRow, fromCol, toRow, toCol) {
